@@ -1,0 +1,79 @@
+<div>
+    <h1>PRODUCTOS EN TIEMPO REAL</h1>
+
+    <h3>Agregar producto nuevo</h3>
+    <form>
+        <label for="fname">Ingrese nombre del producto:</label><br>
+        <input type="text" id="tittle"><br>
+        <label for="lname">Ingrese descipccion del producto:</label><br>
+        <input type="text" id="desciption"><br>
+        <label for="fname">Ingrese codigo del producto:</label><br>
+        <input type="text" id="code"><br>
+        <label for="lname">Ingrese precio del producto:</label><br>
+        <input type="text" id="price"><br>
+        <label for="fname">Ingrese stock del producto:</label><br>
+        <input type="text" id="stock"><br>
+        <label for="lname">Ingrese categoria del producto:</label><br>
+        <input type="text" id="category"><br><br>
+        <button id="btnADD">agregar producto</button>
+    </form><br><br>
+    
+    <h3>Eliminar producto</h3>
+    <form>
+        <label for="lname">Ingrese el id del producto que desea eliminar:</label><br>
+        <input type="text" id="id"><br><br>
+        <button id="btnDelete">eliminar producto</button>
+    </form>
+
+    <div id="contenedor-productos">
+        {{#each productos}}
+            <div>
+                <h3>{{this.tittle}}</h3>
+                <p>{{this.description}}</p>
+                <p>Id del producto: {{this.id}}</p>
+                <p>Precio: {{this.price}}</p>
+                <p>Stock: {{this.stock}}</p>
+                <p>{{this.category}}</p>
+                <hr>
+            </div>
+        {{/each}} 
+    </div>
+
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        document.getElementById('btnADD').onclick = () =>{
+
+            let tittle = document.getElementById("tittle").value;
+            let desciption = document.getElementById("desciption").value;
+            let code = document.getElementById("code").value;
+            let price = document.getElementById("price").value;
+            let stock = document.getElementById("stock").value;
+            let category = document.getElementById("category").value;
+
+            let producto = {
+                "tittle":tittle,
+                "desciption":desciption,
+                "code":code,
+                "price":price,
+                "stock":stock,
+                "category":category
+            }
+            
+            socket.emit('pedido', producto)
+        }
+
+        document.getElementById('btnDelete').onclick = async () =>{
+
+            let id = document.getElementById("id").value;
+        
+        socket.emit('delete', id)
+        }
+
+        socket.on('update', console.log)
+
+    </script>
+
+</div>
