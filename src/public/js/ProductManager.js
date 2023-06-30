@@ -1,4 +1,5 @@
 import fs from 'fs';
+//import { productModel } from '../src/models/productos.model.js';
 
 export class ProductManager{
 
@@ -8,7 +9,7 @@ export class ProductManager{
         this.mensaje = ""
     }
 
-    async camposVacios(tittle, description, price, category, code, stock){
+    async camposVacios(tittle, description, code, price, stock, category){
         return  ( (tittle===undefined || tittle.trim().length==0) || 
                 (description===undefined || description.trim().length==0) || 
                 (price===undefined) ||  
@@ -39,7 +40,7 @@ export class ProductManager{
 
     async addProduct(tittle, description, code, price, stock, category, thumbnail){
 
-        if (await this.camposVacios(tittle, description, price, category, code, stock)) {
+        if (await this.camposVacios(tittle, description, code, price, stock, category)) {
             this.mensaje="campos invalidos";
             return;
         }
@@ -109,12 +110,7 @@ export class ProductManager{
     }
 
     getProducts = async() => {
-        return fs.promises.readFile(this.path ,this.format)
-        .then(content => JSON.parse(content))
-        .catch(e => {
-            console.log('ERROR', e)
-            return []
-        })
+        return await productModel.find()
     }
 
     getProductsWithLimit = async(limite) => {
