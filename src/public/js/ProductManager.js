@@ -1,5 +1,6 @@
 import fs from 'fs';
-//import { productModel } from '../src/models/productos.model.js';
+import { productModel } from '../../models/productos.model.js';
+import mongoose from "mongoose";
 
 export class ProductManager{
 

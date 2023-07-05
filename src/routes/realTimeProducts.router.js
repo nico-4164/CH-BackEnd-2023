@@ -1,12 +1,17 @@
-import {ProductManager} from '../public/js/ProductManager.js';
+import { productModel } from '../models/productos.model.js';
 import express from 'express'
 
 const router = express.Router();
-const productManager= new ProductManager("./src/public/archivos/productos.json");
 
 router.get('/', async (req, res) => {
-    const productos = await productManager.getProducts();
-    res.render('realtimeproducts',{productos})
+    try {
+        const products = await productModel.find();
+        res.render('realTimeProducts',{products})
+        //res.send({ result: 'success', payload: products });
+    } catch (error) {
+        console.log("No se pudo conectar a mongoose: " + error);
+    }
+    //res.render('realtimeproducts',{productos})
 })
 
 

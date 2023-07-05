@@ -4,9 +4,17 @@ import mongoosePaginate from 'mongoose-paginate-v2'
 const cartCollection = 'cart';
 
 const carttSchema =  new mongoose.Schema({
-    "totalItems":Number,
-    "totalPrice":Number,
-    "products": []
+    "productsQuantity":Number,
+    "productsPrice":Number,
+    "products": [{
+        product: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'products'
+        },
+        quantity: {
+          type: Number
+        }
+      }]
 })
 
 carttSchema.plugin(mongoosePaginate);

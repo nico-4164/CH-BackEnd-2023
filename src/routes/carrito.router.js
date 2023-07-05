@@ -1,85 +1,95 @@
-import { Router } from 'express'
-import {cartModel} from  '../models/cart.model.js';
+import { Router } from 'express';
+import { cartModel } from '../models/cart.model.js';
+import { productModel } from '../models/productos.model.js';
 
-const router = Router()
+const router = Router();
 
-router.get('/', async (req,res) => {
-    try{
-        let cart = await cartModel.find();
-        res.send({result:'success', payload:cart})
+router.get('/', async (req, res) => {
+    try {
+        const carts = await cartModel.find();
+        res.send({ result: 'success', payload: carts });
+    } catch (error) {
+        console.log("No se pudo conectar a mongoose: " + error);
     }
-    catch(error){
-        console.log("no se pudo conectar a mongoose: "+error);
-    }
-})
+});
 
-router.put("/:cid", async(req,res)=>{
-    let {cid} = req.params;
-    let product = req.body;
-    let productToAdd={
-        "totalItems":Number,
-        "totalPrice":Number,
-        "products": []
-    }
-
-    if (!product)return res.send({status:"error",error:"vavlores incompletos"})
-
-    let cart = await cartModel.updateOne({_id:cid},productToAdd)
-    res.send({status:"success",payload:cart})
-})
-
-router.post("/", async(req,res) =>{
-
-    let product = req.body;
-    let productToAdd={
-        "totalItems":1,
-        "totalPrice":1,
-        "products": product
+router.put("/:cid", async (req, res) => {
+    const { cid } = req.params;
+    const product = req.body;
+    const productToAdd = {
+        totalItems: Number,
+        totalPrice: Number,
+        products: []
     };
 
-    if (!product) return res.send({status:"error",error:req.body});
-    let cart = await cartModel.create({totalItems,totalPrice,product});
-    res.send({status:"success",payload:cart})
-})
+    if (!product) {
+        return res.send({ status: "error", error: "valores incompletos" });
+    }
+
+    const cart = await cartModel.updateOne({ _id: cid }, productToAdd);
+    res.send({ status: "success", payload: cart });
+});
+
+router.post("/", async (req, res) => {
+    const product = req.body;
+    const productToAdd = {
+        totalItems: 1,
+        totalPrice: 1,
+        products: product
+    };
+
+    if (!product) {
+        return res.send({ status: "error", error: req.body });
+    }
+
+    const cart = await cartModel.create(productToAdd);
+    res.send({ status: "success", payload: cart });
+});
 
 router.post('/:cid/product/:pid', async (req, res) => {
-
     const cid = req.params.cid;
+    const { pid } = req.params;
 
-    let {pid} = req.params;
-    let product = await productModel.aggregate([{$match:{_id:pid}}]);
-    let productToAdd={
-        "totalItems":1,
-        "totalPrice":1,
-        "products": product
-    };
-    if (!product.tittle || !product.description || !product.code || !product.price || !product.stock || !product.category)
-        return res.send({status:"error",error:"vavlores incompletos"})
+    try {
+        const product = await productModel.findOne({ _id: pid });
 
-    let cart = await cartModel.updateOne({_id:cid},productToAdd)
-    res.send({status:"success",payload:cart})
-})
+        if (!product) {
+            return res.send({ status: "error", error: "Producto no encontrado" });
+        }
+
+        const productToAdd = {
+            totalItems: 1,
+            totalPrice: 1,
+            products: [product]
+        };
+
+        const cart = await cartModel.updateOne({ _id: cid }, productToAdd);
+        res.send({ status: "success", payload: cart });
+    } catch (error) {
+        console.log("No se pudo conectar a mongoose: " + error);
+    }
+});
 
 router.delete('/carts/:cid', async (req, res) => {
-    let {cid} = req.params;
-    let cart = await cartModel.deleteOne({_id:cid})
-    res.send({status:"success",payload:cart})
-})
+    const { cid } = req.params;
 
-router.delete("/carts/:cid/products/:pid", async(req,res)=>{
-    let {pid} = req.params;
-    let {cid} = req.params;
+    try {
+        const cart = await cartModel.deleteOne({ _id: cid });
+        res.send({ status: "success", payload: cart });
+    } catch (error) {
+        console.log("No se pudo conectar a mongoose: " + error);
+    }
+});
 
-    let result = await productModel.deleteOne(
-        {
-        _id:pid
-        },
-        {
-         $match:{products:pid}   
-        }
-    )
-    res.send({status:"success",payload:result})
-})
+router.delete("/carts/:cid/products/:pid", async (req, res) => {
+    const { pid, cid } = req.params;
 
+    try {
+        const result = await productModel.deleteOne({ _id: pid, products: pid });
+        res.send({ status: "success", payload: result });
+    } catch (error) {
+        console.log("No se pudo conectar a mongoose: " + error);
+    }
+});
 
-export default router
+export default router;
