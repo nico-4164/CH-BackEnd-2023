@@ -5,9 +5,11 @@ const router = express.Router();
 
 router.get('/', async (req, res) => {
     try {
-        const products = await productModel.find();
+        const products = await productModel.aggregate([
+            { $sort: { price: 1 } }
+        ])
+        console.log(products);
         res.render('realTimeProducts',{products})
-        //res.send({ result: 'success', payload: products });
     } catch (error) {
         console.log("No se pudo conectar a mongoose: " + error);
     }

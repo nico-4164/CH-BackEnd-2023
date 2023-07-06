@@ -5,6 +5,8 @@ import handlebars from 'express-handlebars';
 import realTimeProducts from './routes/realTimeProducts.router.js';
 import productosRouter from './routes/productos.router.js';
 import userRouter from './routes/user.router.js';
+import loginRouter from './routes/login.router.js'
+import registerRouter from './routes/register.router.js'
 
 import mongoose from 'mongoose';
 import { productModel } from '../src/models/productos.model.js';
@@ -25,6 +27,7 @@ mongoose.connect('mongodb+srv://nicolaschaves1991:iYm9g3zcwk40HyyF@coderhousebac
   console.error('Error al conectar a la base de datos:', error);
 });
 
+
 // Config engine templates
 app.engine('handlebars', handlebars.engine());
 app.set('views','./src/views');
@@ -37,6 +40,8 @@ app.use('/realtimeproducts', realTimeProducts)
 app.use('/api/productos', productosRouter);
 app.use('/api/carts', carritoRouter);
 app.use('/api/users',userRouter);
+app.use('/login',loginRouter);
+app.use('/register',registerRouter)
 
 const messages = []
 

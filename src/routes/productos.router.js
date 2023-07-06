@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { productModel } from '../models/productos.model.js';
-import express from 'express'
+
 
 const router = Router();
 
