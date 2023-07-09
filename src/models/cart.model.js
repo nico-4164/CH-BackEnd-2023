@@ -7,9 +7,12 @@ const carttSchema =  new mongoose.Schema({
     "productsQuantity":Number,
     "productsPrice":Number,
     "products": [{
-        product: {
+        productId: {
           type: mongoose.Schema.Types.ObjectId,
           ref: 'products'
+        },
+        productName:{
+          type: String
         },
         quantity: {
           type: Number

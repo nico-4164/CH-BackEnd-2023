@@ -1,155 +1,131 @@
-import fs from 'fs';
 import { productModel } from '../../models/productos.model.js';
-import mongoose from "mongoose";
 
-export class ProductManager{
-
-    constructor(path){
-        this.path = path
-        this.format = "utf-8"
-        this.mensaje = ""
+export class ProductManager {
+    constructor() {
+        this.mensaje = "";
     }
 
-    async camposVacios(tittle, description, code, price, stock, category){
-        return  ( (tittle===undefined || tittle.trim().length==0) || 
-                (description===undefined || description.trim().length==0) || 
-                (price===undefined) ||  
-                (code===undefined || code.trim().length==0) || 
-                (stock===undefined)) ||
-                (category===undefined || category.trim().length==0) 
-    }
-
-    getMensaje(){
-        return this.mensaje;
-    }
-
-    async existeCode(code){
-
-        let productos = await this.getProducts()
-
-        if (productos.length == 0) {
-            return false;
-        }   
-
-        for (let i = 0; i < productos.length; i++) {
-            const p = productos[i];
-            if (p.code == code) {
-                return true;
-            }
+    async getProducts(_limit,_price) {
+        _limit = parseInt(_limit) || 10;
+        _price = parseInt(_price) || 1;
+        try {
+            const products = await productModel.aggregate([
+                { $limit: _limit },
+                { $sort: { price: _price } }
+            ]);
+            return products;
+        } catch (error) {
+            console.log("Error al obtener los productos:", error);
+            return [];
         }
     }
 
-    async addProduct(tittle, description, code, price, stock, category, thumbnail){
+    async getProductsByCategory(_limit,_price,_category) {
+        _limit = parseInt(_limit) || 10;
+        _price = parseInt(_price) || 1;
+        try {
+            const products = await productModel.aggregate([
+                { $match: { category: _category } },
+                { $limit: _limit },
+                { $sort: { price: _price } }
+            ]);
+            return products;
+        } catch (error) {
+            console.log("Error al obtener los productos:", error);
+            return [];
+        }
+    }
 
-        if (await this.camposVacios(tittle, description, code, price, stock, category)) {
-            this.mensaje="campos invalidos";
+    async getProductsWithLimit(limite) {
+        try {
+            const products = await productModel.find().limit(limite);
+            return products;
+        } catch (error) {
+            console.log("Error al obtener los productos:", error);
+            return [];
+        }
+    }
+
+    async getProductById(id) {
+        try {
+            const product = await productModel.findById(id);
+            if (product) {
+                return product;
+            } else {
+                return { status: "El producto que desea modificar no se encontró" };
+            }
+        } catch (error) {
+            console.log("Error al obtener el producto:", error);
+            return { status: "Ocurrió un error al obtener el producto" };
+        }
+    }
+
+    async addProduct(tittle, description, code, price, stock, category) {
+        if (await this.undefinValues(tittle, description, code, price, stock, category)) {
+            this.mensaje = "campos invalidos";
             return;
         }
-        if(await this.existeCode(code)){
-            console.log("El codigo "+code+" es invalido para el producto "+tittle);
-            this.mensaje="El codigo "+code+" es invalido para "+tittle;
+
+        if (await this.existeCode(code)) {
+            this.mensaje = `El código ${code} es inválido para el producto ${tittle}`;
+            return;
         }
-        else{
-            this.mensaje="success";
-            let status = true;
-            const id = await this.getNextId();
-            const producto = {
-                id,
+
+        try {
+            const product = await productModel.create({ tittle, description, code, status, stock, category });
+            return product;
+        } catch (error) {
+            console.log("Error al agregar el producto:", error);
+            this.mensaje = "Ocurrió un error al agregar el producto";
+        }
+    }
+
+    async updateProduct(id, tittle, description, code, price, stock, status, category) {
+        try {
+            await productModel.findByIdAndUpdate(id, {
                 tittle,
                 description,
                 code,
                 price,
                 status,
                 stock,
-                category,
-                thumbnail
-            }
-
-            this.getProducts()
-            .then(products => {
-                products.push(producto)
-                return products
-            })
-            .then(productNew => fs.promises.writeFile(this.path, JSON.stringify(productNew)))
+                category
+            });
+            this.mensaje = "success";
+        } catch (error) {
+            console.log("Error al actualizar el producto:", error);
+            this.mensaje = "Ocurrió un error al actualizar el producto";
         }
     }
 
-    async updateProduct(id, tittle, description,code, price, stock, status, category, thumbnail){
-
-        let productos = await this.getProducts()
-
-        for (let i = 0; i < productos.length; i++) {
-            const p = productos[i];
-
-            if (p.id == id) {
-
-                console.log("entro en la edicion");
-                
-                p.tittle=tittle;
-                p.description=description;
-                p.code=code;
-                p.price=price;
-                p.status=status;
-                p.stock=stock;
-                p.category=category;
-                p.thumbnail=thumbnail;
-                i=productos.length;
-            } 
-            
-        }
-        fs.promises.writeFile(this.path, JSON.stringify(productos))
-        
-    }
-
-    async deleteProduct(id){
-
-        let productos = await this.getProducts()
-        const filterProductos = await productos.filter((p) => p.id !== id)
-
-        fs.promises.writeFile(this.path, JSON.stringify(filterProductos))
-
-    }
-
-    getProducts = async() => {
-        return await productModel.find()
-    }
-
-    getProductsWithLimit = async(limite) => {
-        return fs.promises.readFile(this.path ,this.format)
-        .then(content => JSON.parse(content))
-        .then(productos => productos.slice(0,limite))
-        .catch(e => {
-            console.log('ERROR', e)
-            return []
-        })
-    }
-
-    async getProductById(id){
-
-        let productos = await this.getProducts()
-
-        for (let i = 0; i < productos.length; i++) {
-            const p = productos[i];
-
-            if (p.id == id) {
-                return p;
-            } 
-        }
-        return {status: 'El producto que desea modificar no se encontro'}
-    }
-
-    async getNextId(){
-
-        let products = await this.getProducts();
-        const count = products.length;
-
-
-        if (count > 0) {
-            const lastProduct = products[count-1]
-            const id = lastProduct.id + 1;
-            return id;
-        }else{
-            return 1;
+    async deleteProduct(id) {
+        try {
+            await productModel.findByIdAndDelete(id);
+            this.mensaje = "success";
+        } catch (error) {
+            console.log("Error al eliminar el producto:", error);
+            this.mensaje = "Ocurrió un error al eliminar el producto";
         }
     }
+
+    async undefinValues(tittle, description, code, price, stock, category) {
+        return (
+            (tittle === undefined || tittle.trim().length == 0) ||
+            (description === undefined || description.trim().length == 0) ||
+            (price === undefined) ||
+            (code === undefined || code.trim().length == 0) ||
+            (stock === undefined) ||
+            (category === undefined || category.trim().length == 0)
+        );
+    }
+
+    getMensaje() {
+        return this.mensaje;
+    }
+
+    async existeCode(code) {
+        const product = await productModel.findOne({ code: code });
+        return product ? true : false;
+    }
+
 }
